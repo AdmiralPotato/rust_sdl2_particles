@@ -34,7 +34,26 @@ pub fn main() {
     let mut i = 0;
     let mut counter = 0;
     let mut sprite_frame = 0;
+    let mut position: (i32, i32) = (0, 0);
     'running: loop {
+        for event in event_pump.poll_iter() {
+            match event {
+                Event::Quit { .. }
+                | Event::KeyDown {
+                    keycode: Some(Keycode::Escape),
+                    ..
+                } => break 'running,
+                Event::MouseButtonDown { x, y, .. } => {
+                    println!("Event::MouseButtonDown? x: {x}, y: {y}")
+                }
+                Event::MouseMotion { x, y, .. } => {
+                    // println!("Event::MouseMotion? x: {x}, y: {y}");
+                    position.0 = x;
+                    position.1 = y;
+                }
+                _ => {}
+            }
+        }
         i = (i + 1) % 255;
         let bg_color = Color::RGB(i, 64, 255 - i);
         canvas.set_draw_color(bg_color);
@@ -63,19 +82,9 @@ pub fn main() {
         crab_sprite_sheet.draw(
             &mut canvas,
             (2 + sprite_frame) % crab_sprite_sheet.total_sprites,
-            512,
-            256,
+            position.0 - 64,
+            position.1 - 64,
         );
-        for event in event_pump.poll_iter() {
-            match event {
-                Event::Quit { .. }
-                | Event::KeyDown {
-                    keycode: Some(Keycode::Escape),
-                    ..
-                } => break 'running,
-                _ => {}
-            }
-        }
         // The rest of the game loop goes here...
 
         counter = (counter + 1) % 10;
