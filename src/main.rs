@@ -1,6 +1,3 @@
-mod spritesheet;
-use spritesheet::SpriteSheet;
-
 extern crate sdl2;
 
 use sdl2::event::Event;
@@ -8,6 +5,11 @@ use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
 use sdl2::rect::Rect;
 use std::time::Duration;
+
+mod spritesheet;
+use spritesheet::SpriteSheet;
+mod particle;
+use particle::Particle;
 
 pub fn main() {
     let sdl_context = sdl2::init().unwrap();
@@ -27,6 +29,7 @@ pub fn main() {
 
     let crab_sprite_sheet = SpriteSheet::new("textures/crabs.png", &texture_creator, 1, 7);
 
+    let mut crabicles: Vec<Particle> = vec![];
     canvas.set_draw_color(Color::RGB(0, 255, 255));
     canvas.clear();
     canvas.present();
@@ -44,7 +47,8 @@ pub fn main() {
                     ..
                 } => break 'running,
                 Event::MouseButtonDown { x, y, .. } => {
-                    println!("Event::MouseButtonDown? x: {x}, y: {y}")
+                    println!("Event::MouseButtonDown? x: {x}, y: {y}");
+                    crabicles.push(Particle::new(x as f32, y as f32));
                 }
                 Event::MouseMotion { x, y, .. } => {
                     // println!("Event::MouseMotion? x: {x}, y: {y}");
@@ -86,6 +90,23 @@ pub fn main() {
             position.1 - 64,
         );
         // The rest of the game loop goes here...
+
+        // for crab in crabicles {
+        // equivalent to:
+        // for crab in crabicles.into_iter() {
+        // So if you plan to keep a vec around after looping over it,
+        // .iter() or .iter_mut() for or it WILL BE CONSUMED~~!!!
+        for crab in crabicles.iter_mut() {
+            crab.tick();
+            crab_sprite_sheet.draw(
+                &mut canvas,
+                (2 + sprite_frame) % crab_sprite_sheet.total_sprites,
+                (crab.pos.x as i32) - 64,
+                (crab.pos.y as i32) - 64,
+            );
+        }
+        // this is like list = list.filter(...), but rustier
+        crabicles.retain(|x| x.lifespan > 0);
 
         counter = (counter + 1) % 10;
         if counter == 9 {
