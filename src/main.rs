@@ -36,8 +36,8 @@ pub fn main() {
     let mut event_pump = sdl_context.event_pump().unwrap();
     let mut i = 0;
     let mut counter = 0;
-    let mut sprite_frame = 0;
     let mut position: (i32, i32) = (0, 0);
+    let mut last_crab_index: u32 = 0;
     'running: loop {
         for event in event_pump.poll_iter() {
             match event {
@@ -48,7 +48,8 @@ pub fn main() {
                 } => break 'running,
                 Event::MouseButtonDown { x, y, .. } => {
                     println!("Event::MouseButtonDown? x: {x}, y: {y}");
-                    crabicles.push(Particle::new(x as f32, y as f32));
+                    crabicles.push(Particle::new(x as f32, y as f32, last_crab_index));
+                    last_crab_index = last_crab_index.wrapping_add(1);
                 }
                 Event::MouseMotion { x, y, .. } => {
                     // println!("Event::MouseMotion? x: {x}, y: {y}");
@@ -71,24 +72,8 @@ pub fn main() {
         canvas
             .fill_rect(Rect::new(20, 20, 760, 560))
             .expect("Could not fill rect");
-        crab_sprite_sheet.draw(
-            &mut canvas,
-            (0 + sprite_frame) % crab_sprite_sheet.total_sprites,
-            10,
-            10,
-        );
-        crab_sprite_sheet.draw(
-            &mut canvas,
-            (1 + sprite_frame) % crab_sprite_sheet.total_sprites,
-            110,
-            110,
-        );
-        crab_sprite_sheet.draw(
-            &mut canvas,
-            (2 + sprite_frame) % crab_sprite_sheet.total_sprites,
-            position.0 - 64,
-            position.1 - 64,
-        );
+        crab_sprite_sheet.draw(&mut canvas, 0, 10, 10);
+        crab_sprite_sheet.draw(&mut canvas, 1, 110, 110);
         // The rest of the game loop goes here...
 
         // for crab in crabicles {
@@ -96,11 +81,11 @@ pub fn main() {
         // for crab in crabicles.into_iter() {
         // So if you plan to keep a vec around after looping over it,
         // .iter() or .iter_mut() for or it WILL BE CONSUMED~~!!!
-        for crab in crabicles.iter_mut() {
+        for (index, crab) in crabicles.iter_mut().enumerate() {
             crab.tick();
             crab_sprite_sheet.draw(
                 &mut canvas,
-                (2 + sprite_frame) % crab_sprite_sheet.total_sprites,
+                crab.index % crab_sprite_sheet.total_sprites,
                 (crab.pos.x as i32) - 64,
                 (crab.pos.y as i32) - 64,
             );
@@ -108,10 +93,11 @@ pub fn main() {
         // this is like list = list.filter(...), but rustier
         crabicles.retain(|x| x.lifespan > 0);
 
+        // crab for cursor
+        crab_sprite_sheet.draw(&mut canvas, 2, position.0 - 64, position.1 - 64);
+
         counter = (counter + 1) % 10;
-        if counter == 9 {
-            sprite_frame += 1;
-        }
+        if counter == 9 {}
         canvas.present();
         std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
     }
